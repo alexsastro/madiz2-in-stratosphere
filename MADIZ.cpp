@@ -1,58 +1,71 @@
 #include "obr.hpp"
 #include "util.hpp"
 #include "serv.hpp"
+#include "PCA.hpp"
+#include "dtypes.h"
 #include <omp.h>
 #include <iostream>
 #include <vector>
-#include <tuple>
-#include <stdio.h>
+#include <opencv2/opencv.hpp>
 #include <string>
 #define str to_string
-#define uchar unsigned char
+using cv::Mat;
+using cv::COLOR_RGB2GRAY;
+using cv::imread;
 using namespace std;
 
 
-void scan(Mat &image,vector<string>&s,vector<int> &csts, vector<bool> &fxs,int i)
+void scan(Mimg &img,vector<string>&s,vector<int> &csts,int i)
 {
-    Mat imgs;
-    float averange;
-    vector<uchar> pixel_brightness, group_brightness;
-    imgs=copy_im(image);
-    tie(averange, pixel_brightness, group_brightness)=count_pixels(imgs,csts[i],fxs[i]);
-    int cgroups=count_groups(image,averange);
-    s[i]=";"+str(averange)+";"+str(pixel_brightness.size())+';'+str(group_brightness.size())+";"+str(cgroups);
+    float averange=mean(img)+csts[i];
+    vector<unsigned int> sum_groups_bright;
+    vector<float> groups_bright;
+    int particle=0,treck=0;
+    int cnt_groups=count_groups(img,averange);
+    tie(treck, particle, groups_bright,sum_groups_bright)=count_cloudsPCA(img);
+    s[i]=";"+str(averange)+";"+str(treck)+';'+str(particle)+";"+str(cnt_groups);
 }
 
 
 int main(int argc, char** argv)
 {
+    ios::sync_with_stdio(false);
+    cin.tie(NULL);
+    cout.tie(NULL);
 	Mat image;
-	image = load_gray_image(argv[1]);
+	image = imread(argv[1], 1);
     //namedWindow("Display Image", WINDOW_AUTOSIZE);
 	//imshow("Display Image", image);
     //waitKey(0);
+	if (!image.data) {
+		cout<<"No image data \n";
+		return -1;
+	}
     
     auto t=start_time();
 
+    cvtColor(image,image,COLOR_RGB2GRAY);
+    Mimg img(image);
     //cout<<image.rows<<' '<<image.cols<<'\n';
-    vector<int> csts = vector<int> { 7, 9, 11, 15, 17,(int)mean(image)/32,80};
-    vector<bool> fxs = vector<bool> {false,false,false,false,false,false,true};
-    string sn=str(is_overexposed(image)); //row for save to csv file
-    vector<string> s = vector<string>(7);
+    vector<int> csts = vector<int> {17};
+    vector<bool> fxs = vector<bool> {false};
+    string sn=str(is_overexposed(img)); //row for save to csv file
+    vector<string> s = vector<string>(csts.size());
     #pragma omp parallel for
-    for (int i=0;i<7;i++)
+    for (int i=0;i<csts.size();i++)
     {
-        scan(image,s,csts,fxs,i);
+        scan(img,s,csts,i);
     }
 
-    get_time(t,"main");
-    
     cout<<sn;
-    for (int i=0;i<7;i++)
+    for (int i=0;i<csts.size();i++)
     {
         cout<<s[i];
     }
     cout<<'\n';
+    
+    get_time(t,"main");
     process_mem_usage();
+
     return 0;
 }

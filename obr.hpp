@@ -1,18 +1,16 @@
 #ifndef obr_hpp__
 #define obr_hpp__
 
+#include "dtypes.h"
 #include <vector>
-#include <tuple>
-#include "util.hpp"
-#define uchar unsigned char
+#include <opencv2/opencv.hpp>
+using cv::Mat;
 using namespace std;
 
-bool is_overexposed(Mat &img);
+bool is_overexposed(Mimg &img);
 
-tuple<float, vector<uchar>,vector<uchar>> count_pixels(Mat &img, int &cst, bool fixed=false);
+//vector<point> get_groupBFS(Mat &img,point &start, float &factor,Mat &vizited);
 
-vector<point> get_groupBFS(Mat &img,point &start, float &factor,Mat &vizited);
-
-int count_groups(Mat &img,float &factor);
+int count_groups(Mimg &img,float &factor);
 
 #endif
