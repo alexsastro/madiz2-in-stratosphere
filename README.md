@@ -1,2 +1,2 @@
 # stratocube
-Simple cubesat for stratosphere
+Simple cubesat with madiz2 on board for stratosphere
